@@ -3,7 +3,7 @@
 
 
 login() {
-    echo "Bienvenido a Citadel."
+    echo "*** Inicio de sesión ***"
     user_found=false
     user_name=""
     user_passwd=""
@@ -35,4 +35,61 @@ login() {
     done
 }
 
-login
+crearUsuario() {
+    echo "*** Creación de usuario ***"
+    echo "Ingrese el nombre del usuario a crear:"
+    read user_name
+    user_exists=false
+    while IFS='@' read -r user passwd; do
+        if [ "$user_name" = "$user" ]; then
+            user_exists=true
+        fi
+    done < usuarios.txt
+    if [ "$user_exists" = "false" ]; then
+        echo "Ingrese la contraseña a utilizar:"
+        read -s passwd_1
+        echo "Confirme la contraseña:"
+        read -s passwd_2
+        if [ "$passwd_1" = "$passwd_2" ]; then
+            echo "${user_name}@${passwd_1}" >> usuarios.txt
+            echo "Usuario $user_name registrado con éxito."
+        else
+            echo "! ERROR !: Las contraseñas no son iguales. Vuelve a intentarlo."
+        fi
+    else
+        echo "El usuario ingresado ya existe. Debes elegir un nombre distinto."
+    fi
+    echo "*** Regresando al menú... ***"
+}
+
+cambiarContraseña() {
+    echo "*** Cambio de contraseña ***"
+    echo "Ingrese el nombre de usuario:"
+    read username
+    user_found=false
+    user_name=""
+    user_passwd=""
+    while IFS='@' read -r user passwd; do
+        passwd=$(echo "$passwd" | tr -d '\r\n')
+        if [ "$user" = "$username" ]; then
+            user_found="true"
+            user_passwd="$passwd"
+            user_name="$user"
+        fi
+    done < usuarios.txt
+    if [ "$user_found" = "true" ]; then
+        echo "Ingrese la contraseña actual."
+        read -s contra
+        if [ "$contra" = "$user_passwd" ]; then
+            echo "Ingrese la nueva contraseña para $user_name."
+            read -s new_contra
+            sed -i "s|"$user_name@$user_passwd"|"$user_name@$new_contra"|g" usuarios.txt
+            echo "Contraseña modificada exitosamente."
+        else
+            echo "Contraseña incorrecta."
+        fi
+    else
+        echo "Usuario no encontrado."
+    fi
+    echo "*** Regresando al menú... ***"
+}
