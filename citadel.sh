@@ -16,19 +16,14 @@ menu()
         case "${opcion,,}" in  #opcion,, es para que sea lowercase
             1) 
                 menuUsuario;
-                break;
             2) 
                 menuIngresar;
-                break;
             3) 
                 menuProducto;
-                break;
             4) 
                 menuFiltro;
-                break;
             5) 
                 menuReporte;
-                break;
             "salir") 
                 echo "Saliendo";
                 break;
@@ -40,5 +35,44 @@ menu()
 
     
 }
+
+menuUsuario()
+{
+    while true; do
+        clear
+        echo "Obligatorio - Usuario"
+        echo "--------------------------------------------"
+        echo "A - Crear Usuario"
+        echo "B - Cambiar Contraseña"
+        echo "C - Login"
+        echo "D - Logout"
+        echo "Salir" 
+
+        read -p "Ingrese su opcion (A,B,C,D o salir) " opcion #read -p es para que sea un prompt
+        
+        case "${opcion,,}" in  #opcion,, es para que sea lowercase
+            a) 
+                crearUsuario;
+                break;
+            b) 
+                cambiarContra;
+                break;
+            c) 
+                login;
+                break;
+            d) 
+                logout;
+                break;
+            "salir") 
+                echo "Saliendo a menu";
+                break;
+            *) 
+                echo "Opcion no valida";
+                sleep 1;
+        esac
+    done
+}
+
+
 
 login
