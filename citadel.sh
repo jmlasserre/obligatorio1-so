@@ -1,3 +1,14 @@
+inicializar()
+{
+    touch usuarios.txt
+    if [! -r usuarios.txt ]; then
+        echo "admin:admin" > usuarios.txt
+    fi
+     if [! -r usuarios.txt ]; then
+        touch productos.txt
+    fi
+}
+
 menu()
 {
     while true; do
@@ -15,15 +26,15 @@ menu()
         
         case "${opcion,,}" in  #opcion,, es para que sea lowercase
             1) 
-                menuUsuario;
+                mUsuario;
             2) 
-                menuIngresar;
+                ingresarP;
             3) 
-                menuProducto;
+                venderP;
             4) 
-                menuFiltro;
+                filtroP;
             5) 
-                menuReporte;
+                reporteP;
             "salir") 
                 echo "Saliendo";
                 break;
@@ -36,7 +47,7 @@ menu()
     
 }
 
-menuUsuario()
+mUsuario()
 {
     while true; do
         clear
@@ -52,10 +63,10 @@ menuUsuario()
         
         case "${opcion,,}" in  #opcion,, es para que sea lowercase
             a) 
-                crearUsuario;
+                crearU;
                 break;
             b) 
-                cambiarContra;
+                cambiarC;
                 break;
             c) 
                 login;
@@ -73,6 +84,10 @@ menuUsuario()
     done
 }
 
+ingresarP()
+{
+    
+}
 
-
+inicializar
 login
