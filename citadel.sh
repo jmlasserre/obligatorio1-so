@@ -93,3 +93,31 @@ cambiarContraseña() {
     fi
     echo "*** Regresando al menú... ***"
 }
+
+ingresarProducto() {
+    echo "*** Ingreso de producto ***"
+    echo "Ingrese el código de producto:"
+    read codigo # TODO: validar código
+    echo "Ingrese el tipo de producto a agregar:"
+    read tipo # TODO: validar tipo de producto
+    echo "Ingrese el nombre de modelo:"
+    read modelo
+    echo "Ingrese una breve descripción del producto:"
+    read descripcion
+    echo "Ingrese la cantidad de stock inicial:"
+    read stock_inicial
+    while [ $stock_inicial -le -1 ]; do
+        echo "Valor de stock inválido (debe ser mayor o igual a 0). Vuelva a intentarlo."
+        read stock_inicial
+    done
+    echo "Ingrese el precio por unidad del producto:"
+    read precio
+    while [ $precio -le 0 ]; do
+        echo "Valor de precio inválido (debe ser mayor a 0). Vuelva a intentarlo."
+        read precio
+    done
+
+    echo "Producto ingresado exitosamente."
+    echo "${codigo} - ${tipo} - ${modelo} - ${descripcion} - ${stock_inicial} - $ ${precio}"
+    echo "*** Regresando al menú... ***"
+}
