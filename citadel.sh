@@ -31,7 +31,7 @@ login() {
                 if [ "$passwd" = "" ]; then
                     echo "[ERROR] La contraseña no puede ser vacía."
                     user_found=false
-                elif [ "$user_passwd" = "$passwd" ]; then
+                    elif [ "$user_passwd" = "$passwd" ]; then
                     echo "Bienvenido, $user_name."
                     user_actual="$user_name"
                     break
@@ -50,7 +50,7 @@ logout() {
     if [ option = "y" ]; then
         user_actual=""
         echo "*** Cerrando sesión... ***"
-    elif [ option = "n" ]; then
+        elif [ option = "n" ]; then
         echo "*** Regresando al menú... ***"
     else
         echo "Opción incorrecta."
@@ -123,28 +123,46 @@ cambiarContraseña() {
 ingresarProducto() {
     echo "*** Ingreso de producto ***"
     echo "Ingrese el código de producto:"
-    read codigo # TODO: validar código
+    read codigo
+    echo ${#codigo}
+    while [ ${#codigo} -ne 3 -o "$codigo" != "${codigo^^}" ]; do
+        echo "[ERROR] Formato inválido de código. Vuelve a intentarlo."
+        read codigo
+    done
+    codigo="${codigo^^}"
     echo "Ingrese el tipo de producto a agregar:"
-    read tipo # TODO: validar tipo de producto
+    read tipo
+    echo "$codigo"
+    while [ "$codigo" != "BAS" -a "$codigo" != "LAY" -a "$codigo" != "SHA" -a "$codigo" != "DRY" -a "$codigo" != "CON" -a "$codigo" != "TEC" -a "$codigo" != "TEX" -a "$codigo" != "MED" ]; do
+        echo "[ERROR] El tipo ingresado no corresponde al código ingresado ($codigo). Vuelve a intentarlo."
+        read tipo
+    done
     echo "Ingrese el nombre de modelo:"
     read modelo
+    while [ "$modelo" == "" ]; do
+        echo "[ERROR] El modelo no puede ser vacío. Vuelve a intentarlo."
+        read modelo
+    done
     echo "Ingrese una breve descripción del producto:"
     read descripcion
+    while [ "$descripcion" == "" ]; do
+        echo "[ERROR] La descripción no puede ser vacía. Vuelve a intentarlo."
+    done
     echo "Ingrese la cantidad de stock inicial:"
     read stock_inicial
-    while [ $stock_inicial -le -1 ]; do
-        echo "Valor de stock inválido (debe ser mayor o igual a 0). Vuelva a intentarlo."
+    while ! [[ "$stock_inicial" =~ ^[+]?[0-9]+$ ]]; do # esta regex filtra únicamente números positivos
+        echo "Valor de stock inválido. Vuelva a intentarlo."
         read stock_inicial
     done
     echo "Ingrese el precio por unidad del producto:"
     read precio
-    while [ $precio -le 0 ]; do
+    while ! [[ "$precio" =~ ^[+]?[0-9]+$ ]]; do
         echo "Valor de precio inválido (debe ser mayor a 0). Vuelva a intentarlo."
         read precio
     done
     
     echo "Producto ingresado exitosamente."
-    echo "${codigo} - ${tipo} - ${modelo} - ${descripcion} - ${stock_inicial} - $ ${precio}"
+    echo "${codigo} - ${tipo} - ${modelo} - ${descripcion} - ${stock_inicial} - $ ${precio}" >> productos.txt
     echo "*** Regresando al menú... ***"
 }
 
@@ -176,10 +194,10 @@ menu()
         
         case "${opcion,,}" in  #opcion,, es para que sea lowercase
             1) mUsuario;;
-            2) ingresarP;;
-            3) venderP;;
-            4) filtroP;;
-            5) reporteP;;
+            2) ingresarProducto;;
+            3) venderProducto;;
+            4) filtroProductos;;
+            5) reportePinturas;;
             "salir")
                 echo "Saliendo";
             break;;
@@ -206,10 +224,10 @@ mUsuario()
         
         case "${opcion,,}" in  #opcion,, es para que sea lowercase
             a)
-                crearU;
+                crearUsuario;
             break;;
             b)
-                cambiarC;
+                cambiarContraseña;
             break;;
             c)
                 login;
@@ -218,10 +236,10 @@ mUsuario()
                 logout;
             break;;
             "salir")
-                echo "Saliendo a menu";
+                echo "*** Volviendo al menú... ***";
             break;;
             *)
-                echo "Opcion no valida";
+                echo "[ERROR] Opción inválida.";
             sleep 1;;
         esac
     done
