@@ -1,6 +1,7 @@
 #!/bin/bash
 # TODO: instalar dos2unix en Ubuntu (x algún motivo)
 
+user_actual=""
 
 login() {
     echo "*** Inicio de sesión ***"
@@ -10,29 +11,50 @@ login() {
     while [ "$user_found" = "false" ]; do
         echo "Por favor, ingrese su nombre de usuario."
         read usuario
-        while IFS='@' read -r user passwd; do
-            passwd=$(echo "$passwd" | tr -d '\r\n') # esto es para eliminar los caracteres \n al final de cada línea.
-            if [ "$usuario" = "$user" ] && [ "$user_found" = "false" ]; then
-                user_found=true
-                user_name="$user"
-                user_passwd="$passwd"
-                break
-            fi
-        done < usuarios.txt
-        if [ "$user_found" = "false" ]; then
-            echo "Usuario no encontrado. Intente nuevamente."
+        if [ "$usuario" = "" ]; then
+            echo "[ERROR] El usuario no puede estar vacío."
         else
-            echo "Contraseña:"
-            read -s passwd
-            if [ "$user_passwd" = "$passwd" ]; then
-                echo "Bienvenido, $user_name."
-                break
+            while IFS='@' read -r user passwd; do
+                passwd=$(echo "$passwd" | tr -d '\r\n') # esto es para eliminar los caracteres \n al final de cada línea.
+                if [ "$usuario" = "$user" ] && [ "$user_found" = "false" ]; then
+                    user_found=true
+                    user_name="$user"
+                    user_passwd="$passwd"
+                    break
+                fi
+            done < usuarios.txt
+            if [ "$user_found" = "false" ]; then
+                echo "[ERROR] Usuario no encontrado. Intente nuevamente."
             else
-                echo "Contraseña incorrecta."
-                user_found=false
+                echo "Contraseña:"
+                read -s passwd
+                if [ "$passwd" = "" ]; then
+                    echo "[ERROR] La contraseña no puede ser vacía."
+                    user_found=false
+                elif [ "$user_passwd" = "$passwd" ]; then
+                    echo "Bienvenido, $user_name."
+                    user_actual="$user_name"
+                    break
+                else
+                    echo "[ERROR] Contraseña incorrecta."
+                    user_found=false
+                fi
             fi
         fi
     done
+}
+
+logout() {
+    echo "[WARNING] ¿Deseas cerrar la sesión? (y/n)"
+    read option
+    if [ option = "y" ]; then
+        user_actual=""
+        echo "*** Cerrando sesión... ***"
+    elif [ option = "n" ]; then
+        echo "*** Regresando al menú... ***"
+    else
+        echo "Opción incorrecta."
+    fi
 }
 
 crearUsuario() {
@@ -48,16 +70,20 @@ crearUsuario() {
     if [ "$user_exists" = "false" ]; then
         echo "Ingrese la contraseña a utilizar:"
         read -s passwd_1
+        while [ "$passwd_1" = "" ]; do
+            echo "[ERROR] La contraseña no puede ser vacía. Vuelve a intentarlo."
+            read -s passwd_1
+        done
         echo "Confirme la contraseña:"
         read -s passwd_2
         if [ "$passwd_1" = "$passwd_2" ]; then
             echo "${user_name}@${passwd_1}" >> usuarios.txt
             echo "Usuario $user_name registrado con éxito."
         else
-            echo "! ERROR !: Las contraseñas no son iguales. Vuelve a intentarlo."
+            echo "[ERROR] Las contraseñas no son iguales. Vuelve a intentarlo."
         fi
     else
-        echo "El usuario ingresado ya existe. Debes elegir un nombre distinto."
+        echo "[ERROR] El usuario ingresado ya existe. Debes elegir un nombre distinto."
     fi
     echo "*** Regresando al menú... ***"
 }
@@ -116,7 +142,7 @@ ingresarProducto() {
         echo "Valor de precio inválido (debe ser mayor a 0). Vuelva a intentarlo."
         read precio
     done
-
+    
     echo "Producto ingresado exitosamente."
     echo "${codigo} - ${tipo} - ${modelo} - ${descripcion} - ${stock_inicial} - $ ${precio}"
     echo "*** Regresando al menú... ***"
@@ -125,10 +151,10 @@ ingresarProducto() {
 inicializar()
 {
     touch usuarios.txt
-    if [! -r usuarios.txt ]; then
-        echo "admin:admin" > usuarios.txt
+    if ! [ -r usuarios.txt ]; then
+        echo "admin@admin" > usuarios.txt
     fi
-     if [! -r usuarios.txt ]; then
+    if ! [ -r usuarios.txt ]; then
         touch productos.txt
     fi
 }
@@ -137,80 +163,73 @@ menu()
 {
     while true; do
         clear
-        echo "Obligatorio"
+        echo "Citadel"
         echo "--------------------------------------------"
-        echo "1 - Usuario"
+        echo "1 - Gestión de Usuarios"
         echo "2 - Ingresar Producto"
         echo "3 - Vender Producto"
         echo "4 - Filtro De Productos"
         echo "5 - Crear Reporte De Pinturas"
-        echo "Salir" 
-
+        echo "Salir"
+        
         read -p "Ingrese su opcion (1,2,3,4,5 o salir) " opcion #read -p es para que sea un prompt
         
         case "${opcion,,}" in  #opcion,, es para que sea lowercase
-            1) 
-                mUsuario;
-            2) 
-                ingresarP;
-            3) 
-                venderP;
-            4) 
-                filtroP;
-            5) 
-                reporteP;
-            "salir") 
+            1) mUsuario;;
+            2) ingresarP;;
+            3) venderP;;
+            4) filtroP;;
+            5) reporteP;;
+            "salir")
                 echo "Saliendo";
-                break;
-            *) 
+            break;;
+            *)
                 echo "Opcion no valida";
-                sleep 1;
+            sleep 1;;
         esac
     done
-
-    
 }
 
 mUsuario()
 {
     while true; do
         clear
-        echo "Obligatorio - Usuario"
+        echo "Gestión de Usuarios"
         echo "--------------------------------------------"
         echo "A - Crear Usuario"
         echo "B - Cambiar Contraseña"
         echo "C - Login"
         echo "D - Logout"
-        echo "Salir" 
-
-        read -p "Ingrese su opcion (A,B,C,D o salir) " opcion #read -p es para que sea un prompt
+        echo "Salir"
+        
+        read -p "Ingrese su opcion (A, B, C, D o salir)" opcion #read -p es para que sea un prompt
         
         case "${opcion,,}" in  #opcion,, es para que sea lowercase
-            a) 
+            a)
                 crearU;
-                break;
-            b) 
+            break;;
+            b)
                 cambiarC;
-                break;
-            c) 
+            break;;
+            c)
                 login;
-                break;
-            d) 
+            break;;
+            d)
                 logout;
-                break;
-            "salir") 
+            break;;
+            "salir")
                 echo "Saliendo a menu";
-                break;
-            *) 
+            break;;
+            *)
                 echo "Opcion no valida";
-                sleep 1;
+            sleep 1;;
         esac
     done
 }
 
 ingresarP()
 {
-    
+    echo "test"
 }
 
 inicializar
