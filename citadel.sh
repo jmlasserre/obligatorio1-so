@@ -42,6 +42,7 @@ login() {
             fi
         fi
     done
+    sleep 1;
 }
 
 logout() {
@@ -55,6 +56,7 @@ logout() {
     else
         echo "Opción incorrecta."
     fi
+    sleep 1;
 }
 
 crearUsuario() {
@@ -86,6 +88,7 @@ crearUsuario() {
         echo "[ERROR] El usuario ingresado ya existe. Debes elegir un nombre distinto."
     fi
     echo "*** Regresando al menú... ***"
+    sleep 1;
 }
 
 cambiarContraseña() {
@@ -118,6 +121,7 @@ cambiarContraseña() {
         echo "Usuario no encontrado."
     fi
     echo "*** Regresando al menú... ***"
+    sleep 1;
 }
 
 ingresarProducto() {
@@ -151,19 +155,21 @@ ingresarProducto() {
     echo "Ingrese la cantidad de stock inicial:"
     read stock_inicial
     while ! [[ "$stock_inicial" =~ ^[+]?[0-9]+$ ]]; do # esta regex filtra únicamente números positivos
-        echo "Valor de stock inválido. Vuelva a intentarlo."
+        echo "[ERROR] Valor de stock inválido. Vuelva a intentarlo."
         read stock_inicial
     done
     echo "Ingrese el precio por unidad del producto:"
     read precio
     while ! [[ "$precio" =~ ^[+]?[0-9]+$ ]]; do
-        echo "Valor de precio inválido (debe ser mayor a 0). Vuelva a intentarlo."
+        echo "[ERROR] Valor de precio inválido (debe ser mayor a 0). Vuelva a intentarlo."
         read precio
     done
     
     echo "Producto ingresado exitosamente."
     echo "${codigo} - ${tipo} - ${modelo} - ${descripcion} - ${stock_inicial} - $ ${precio}" >> productos.txt
+    echo "${codigo} - ${tipo} - ${modelo} - ${descripcion} - ${stock_inicial} - $ ${precio}"
     echo "*** Regresando al menú... ***"
+    sleep 1;
 }
 
 inicializar()
@@ -172,7 +178,7 @@ inicializar()
     if ! [ -r usuarios.txt ]; then
         echo "admin@admin" > usuarios.txt
     fi
-    if ! [ -r usuarios.txt ]; then
+    if ! [ -r productos.txt ]; then
         touch productos.txt
     fi
 }
@@ -188,21 +194,21 @@ menu()
         echo "3 - Vender Producto"
         echo "4 - Filtro De Productos"
         echo "5 - Crear Reporte De Pinturas"
-        echo "Salir"
+        echo "6 - Salir"
         
-        read -p "Ingrese su opcion (1,2,3,4,5 o salir) " opcion #read -p es para que sea un prompt
+        read -p "¿Qué desea hacer? " opcion #read -p es para que sea un prompt
         
-        case "${opcion,,}" in  #opcion,, es para que sea lowercase
+        case $opcion in
             1) mUsuario;;
             2) ingresarProducto;;
             3) venderProducto;;
             4) filtroProductos;;
             5) reportePinturas;;
-            "salir")
-                echo "Saliendo";
+            6)
+                echo "*** Cerrando sesión. ¡Hasta luego! ***";
             break;;
             *)
-                echo "Opcion no valida";
+                echo "[ERROR] Opción inválida.";
             sleep 1;;
         esac
     done
@@ -214,29 +220,30 @@ mUsuario()
         clear
         echo "Gestión de Usuarios"
         echo "--------------------------------------------"
-        echo "A - Crear Usuario"
-        echo "B - Cambiar Contraseña"
-        echo "C - Login"
-        echo "D - Logout"
-        echo "Salir"
+        echo "1 - Crear Usuario"
+        echo "2 - Cambiar Contraseña"
+        echo "3 - Login"
+        echo "4 - Logout"
+        echo "5 - Salir"
         
-        read -p "Ingrese su opcion (A, B, C, D o salir)" opcion #read -p es para que sea un prompt
+        read -p "¿Qué desea hacer? " opcion #read -p es para que sea un prompt
         
-        case "${opcion,,}" in  #opcion,, es para que sea lowercase
-            a)
+        case $opcion in  #opcion,, es para que sea lowercase
+            1)
                 crearUsuario;
             break;;
-            b)
+            2)
                 cambiarContraseña;
             break;;
-            c)
+            3)
                 login;
             break;;
-            d)
+            4)
                 logout;
             break;;
-            "salir")
+            5)
                 echo "*** Volviendo al menú... ***";
+                sleep 1;
             break;;
             *)
                 echo "[ERROR] Opción inválida.";
@@ -245,10 +252,35 @@ mUsuario()
     done
 }
 
-ingresarP()
+venderProducto()
 {
-    echo "test"
+    i=1
+    j=$i
+    venta="true"
+    while [ "$venta" -eq "true" ]; do
+        echo "Mostrando los productos en el sistema:"
+        while IFS='-' read -r codigo tipo modelo desc stock precio; do
+            echo "${i}-${tipo}-${modelo}-${precio}"
+            i=$((i+1))
+        done < productos.txt
+        if [ i -eq 1 ]; then
+            echo "[ERROR]: No hay productos ingresados. Volviendo al menú..."
+            menu
+        fi 
+        echo "Ingrese el número del producto a vender."
+        read num
+        while [ num -le 0 -a num -le i ]; do
+            echo "[ERROR]: El número de producto ingresado es incorrecto. Vuelve a intentarlo."
+        done
+        while IFS='-' read -r codigo tipo modelo desc stock precio; do
+
+        done
+        echo "¿Desea agregar otro producto (y/n)?"
+        read ans
+        if [ $"ans" = "n" ]; then
+            venta="false"
+        fi
+    done
 }
 
-inicializar
-login
+venderProducto
