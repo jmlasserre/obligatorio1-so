@@ -2,6 +2,7 @@
 # TODO: instalar dos2unix en Ubuntu (x algún motivo)
 
 user_actual=""
+cant_productos=0
 
 login() {
     echo "*** Inicio de sesión ***"
@@ -166,7 +167,8 @@ ingresarProducto() {
     done
     
     echo "Producto ingresado exitosamente."
-    echo "${codigo} - ${tipo} - ${modelo} - ${descripcion} - ${stock_inicial} - $ ${precio}" >> productos.txt
+    cant_productos=$((cant_productos+1))
+    echo "${cant_productos} - ${codigo} - ${tipo} - ${modelo} - ${descripcion} - ${stock_inicial} - $ ${precio}" >> productos.txt
     echo "${codigo} - ${tipo} - ${modelo} - ${descripcion} - ${stock_inicial} - $ ${precio}"
     echo "*** Regresando al menú... ***"
     sleep 1;
@@ -259,9 +261,8 @@ venderProducto()
     venta="true"
     while [ "$venta" -eq "true" ]; do
         echo "Mostrando los productos en el sistema:"
-        while IFS='-' read -r codigo tipo modelo desc stock precio; do
-            echo "${i}-${tipo}-${modelo}-${precio}"
-            i=$((i+1))
+        while IFS='-' read -r num codigo tipo modelo desc stock precio; do
+            echo "${num}-${tipo}-${modelo}-${precio}"
         done < productos.txt
         if [ i -eq 1 ]; then
             echo "[ERROR]: No hay productos ingresados. Volviendo al menú..."
@@ -272,8 +273,11 @@ venderProducto()
         while [ num -le 0 -a num -le i ]; do
             echo "[ERROR]: El número de producto ingresado es incorrecto. Vuelve a intentarlo."
         done
-        while IFS='-' read -r codigo tipo modelo desc stock precio; do
-
+        while IFS='-' read -r num_prod codigo tipo modelo desc stock precio; do
+            if [ $num = $num_prod ]; then
+                echo "Ingrese la cantidad a comprar."
+                read cant_compra
+            fi
         done
         echo "¿Desea agregar otro producto (y/n)?"
         read ans
