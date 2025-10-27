@@ -2,7 +2,7 @@
 # TODO: instalar dos2unix en Ubuntu (x algún motivo)
 
 user_actual=""
-cant_productos=0
+first_login=false
 
 login() {
     echo "*** Inicio de sesión ***"
@@ -60,7 +60,7 @@ logout() {
     sleep 1;
 }
 
-crearUsuario() {
+crear_usuario() {
     echo "*** Creación de usuario ***"
     echo "Ingrese el nombre del usuario a crear:"
     read user_name
@@ -92,7 +92,7 @@ crearUsuario() {
     sleep 1;
 }
 
-cambiarContraseña() {
+cambiar_contraseña() {
     echo "*** Cambio de contraseña ***"
     echo "Ingrese el nombre de usuario:"
     read username
@@ -125,11 +125,10 @@ cambiarContraseña() {
     sleep 1;
 }
 
-ingresarProducto() {
+ingresar_producto() {
     echo "*** Ingreso de producto ***"
     echo "Ingrese el código de producto:"
     read codigo
-    echo ${#codigo}
     while [ ${#codigo} -ne 3 -o "$codigo" != "${codigo^^}" ]; do
         echo "[ERROR] Formato inválido de código. Vuelve a intentarlo."
         read codigo
@@ -137,7 +136,6 @@ ingresarProducto() {
     codigo="${codigo^^}"
     echo "Ingrese el tipo de producto a agregar:"
     read tipo
-    echo "$codigo"
     while [ "$codigo" != "BAS" -a "$codigo" != "LAY" -a "$codigo" != "SHA" -a "$codigo" != "DRY" -a "$codigo" != "CON" -a "$codigo" != "TEC" -a "$codigo" != "TEX" -a "$codigo" != "MED" ]; do
         echo "[ERROR] El tipo ingresado no corresponde al código ingresado ($codigo). Vuelve a intentarlo."
         read tipo
@@ -167,8 +165,7 @@ ingresarProducto() {
     done
     
     echo "Producto ingresado exitosamente."
-    cant_productos=$((cant_productos+1))
-    echo "${cant_productos} - ${codigo} - ${tipo} - ${modelo} - ${descripcion} - ${stock_inicial} - $ ${precio}" >> productos.txt
+    echo "${codigo} - ${tipo} - ${modelo} - ${descripcion} - ${stock_inicial} - $ ${precio}" >> productos.txt
     echo "${codigo} - ${tipo} - ${modelo} - ${descripcion} - ${stock_inicial} - $ ${precio}"
     echo "*** Regresando al menú... ***"
     sleep 1;
@@ -176,13 +173,15 @@ ingresarProducto() {
 
 inicializar()
 {
-    touch usuarios.txt
     if ! [ -r usuarios.txt ]; then
+        touch usuarios.txt
         echo "admin@admin" > usuarios.txt
     fi
     if ! [ -r productos.txt ]; then
         touch productos.txt
     fi
+    login
+    menu
 }
 
 menu()
@@ -201,11 +200,11 @@ menu()
         read -p "¿Qué desea hacer? " opcion #read -p es para que sea un prompt
         
         case $opcion in
-            1) mUsuario;;
-            2) ingresarProducto;;
-            3) venderProducto;;
-            4) filtroProductos;;
-            5) reportePinturas;;
+            1) menu_usuario;;
+            2) ingresar_producto;;
+            3) vender_producto;;
+            4) filtro_productos;;
+            5) reporte_pinturas;;
             6)
                 echo "*** Cerrando sesión. ¡Hasta luego! ***";
             break;;
@@ -216,7 +215,7 @@ menu()
     done
 }
 
-mUsuario()
+menu_usuario()
 {
     while true; do
         clear
@@ -232,10 +231,10 @@ mUsuario()
         
         case $opcion in  #opcion,, es para que sea lowercase
             1)
-                crearUsuario;
+                crear_usuario;
             break;;
             2)
-                cambiarContraseña;
+                cambiar_contraseña;
             break;;
             3)
                 login;
@@ -254,37 +253,92 @@ mUsuario()
     done
 }
 
-venderProducto()
+vender_producto()
 {
+    > orden_temp.txt
+    hay_productos=false
+    venta=true
     i=1
-    j=$i
-    venta="true"
-    while [ "$venta" -eq "true" ]; do
+    while [ "$venta" = "true" ]; do
         echo "Mostrando los productos en el sistema:"
-        while IFS='-' read -r num codigo tipo modelo desc stock precio; do
-            echo "${num}-${tipo}-${modelo}-${precio}"
+        while IFS='-' read -r codigo tipo modelo desc stock precio; do
+            if [ $stock -eq 0 ]; then
+                echo "${i}) ${codigo}-${tipo}-${modelo}-${precio} [AGOTADO]"
+            else
+                echo "${i}) ${codigo}-${tipo}-${modelo}-${precio}"
+            fi
+            ((i++))
+            hay_productos=true
         done < productos.txt
-        if [ i -eq 1 ]; then
+        if [ ${hay_productos} = "false" ]; then
             echo "[ERROR]: No hay productos ingresados. Volviendo al menú..."
-            menu
-        fi 
+            break
+        fi
         echo "Ingrese el número del producto a vender."
         read num
-        while [ num -le 0 -a num -le i ]; do
+        while [ $num -le 0 -a $num -le $i ]; do
             echo "[ERROR]: El número de producto ingresado es incorrecto. Vuelve a intentarlo."
+            read num
         done
-        while IFS='-' read -r num_prod codigo tipo modelo desc stock precio; do
-            if [ $num = $num_prod ]; then
-                echo "Ingrese la cantidad a comprar."
+        
+        # Este comando usa sed, la opción -n para no imprimir también todo el resto del archivo y
+        # le pasamos "${num}p" para decirle que tome la línea "num" de productos.txt.
+        linea=$(sed -n "${num}p" productos.txt)
+        
+        # Aquí tomamos línea y lo pipeamos a un awk. La opción -F es para indicar el 'field' o delimitador,
+        # que en nuestro caso es ' - '. Para el quinto campo de la línea, imprimirlo y guardarlo en stock.
+        
+        stock=$(echo "$linea" | awk -F' - ' '{print $5}' | tr -d ' ')
+        if [ $stock -eq 0 ]; then
+            echo "[ERROR] No hay stock disponible de este producto."
+        else
+            # Acá es lo mismo pero le sacamos el '$' y el ' '.
+            precio_por_unidad=$(echo "$linea" | awk -F' - ' '{print $6}' | tr -d ' $')
+            
+            tipo=$(echo "$linea" | awk -F' - ' '{print $2}' | tr -d '  ')
+            modelo=$(echo "$linea" | awk -F' - ' '{print $3}')
+            
+            echo "Ingrese la cantidad a comprar. Stock actual: "$stock"."
+            read cant_compra
+            
+            while [ $cant_compra -le 0 -o $cant_compra -gt $stock ]; do
+                echo "[ERROR] La cantidad a comprar es inválida. Stock disponible: "$stock""
                 read cant_compra
-            fi
-        done
+            done
+            nuevo_stock=$((stock-cant_compra))
+            nueva_linea=$(echo $linea | sed "s|$stock|$nuevo_stock|")
+            sed -i "${num}s|.*|${nueva_linea}|" productos.txt
+            precio_total=$((cant_compra*precio_por_unidad))
+            echo "${tipo} - ${modelo} - ${cant_compra} - $ ${precio_total}" >> orden_temp.txt
+            echo "Venta realizada. Orden hasta el momento:"
+            leer_venta
+        fi
+        i=1
         echo "¿Desea agregar otro producto (y/n)?"
         read ans
-        if [ $"ans" = "n" ]; then
+        if [ "$ans" = "n" ]; then
             venta="false"
         fi
     done
+    echo "*** Resumen de venta ***"
+    leer_venta
+    echo "*** Volviendo al menú... ***"
+    > orden_temp.txt
+    sleep 3
 }
 
-venderProducto
+leer_venta(){
+    while read line; do
+        echo $line;
+    done < orden_temp.txt
+}
+
+filtro_productos(){
+    #TODO
+}
+
+reporte_pinturas(){
+    #TODO
+}
+
+inicializar
