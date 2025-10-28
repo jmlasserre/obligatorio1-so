@@ -48,15 +48,20 @@ login() {
 
 logout() {
     echo "[WARNING] ¿Deseas cerrar la sesión? (y/n)"
-    read option
-    if [ option = "y" ]; then
-        user_actual=""
-        echo "*** Cerrando sesión... ***"
-        elif [ option = "n" ]; then
-        echo "*** Regresando al menú... ***"
-    else
-        echo "Opción incorrecta."
-    fi
+    read opc
+    opc=$(echo "${opc,,}" | tr -d ' ')
+    opc_valida=false
+    while [ "$opc_valida" = "false" ]; do
+        if [ "$opc" = "y" ]; then
+            opc_valida=true
+            user_actual=""
+            elif [ "$opc" = "n" ]; then
+            opc_valida=true
+        else
+            echo "[ERROR] Opción inválida."
+            read opc
+        fi
+    done
     sleep 1;
 }
 
@@ -126,47 +131,65 @@ cambiar_contraseña() {
 }
 
 ingresar_producto() {
+    clear
     echo "*** Ingreso de producto ***"
-    echo "Ingrese el código de producto:"
-    read codigo
-    while [ ${#codigo} -ne 3 -o "$codigo" != "${codigo^^}" ]; do
-        echo "[ERROR] Formato inválido de código. Vuelve a intentarlo."
+    ingreso=true
+    while [ "$ingreso" = "true" ]; do
+        echo "Ingrese el código de producto:"
         read codigo
-    done
-    codigo="${codigo^^}"
-    echo "Ingrese el tipo de producto a agregar:"
-    read tipo
-    while [ "$codigo" != "BAS" -a "$codigo" != "LAY" -a "$codigo" != "SHA" -a "$codigo" != "DRY" -a "$codigo" != "CON" -a "$codigo" != "TEC" -a "$codigo" != "TEX" -a "$codigo" != "MED" ]; do
-        echo "[ERROR] El tipo ingresado no corresponde al código ingresado ($codigo). Vuelve a intentarlo."
+        while [ ${#codigo} -ne 3 -o "$codigo" != "${codigo^^}" ]; do
+            echo "[ERROR] Formato inválido de código. Vuelve a intentarlo."
+            read codigo
+        done
+        codigo="${codigo^^}"
+        echo "Ingrese el tipo de producto a agregar:"
         read tipo
-    done
-    echo "Ingrese el nombre de modelo:"
-    read modelo
-    while [ "$modelo" == "" ]; do
-        echo "[ERROR] El modelo no puede ser vacío. Vuelve a intentarlo."
+        while [ "$codigo" != "BAS" -a "$codigo" != "LAY" -a "$codigo" != "SHA" -a "$codigo" != "DRY" -a "$codigo" != "CON" -a "$codigo" != "TEC" -a "$codigo" != "TEX" -a "$codigo" != "MED" ]; do
+            echo "[ERROR] El tipo ingresado no corresponde al código ingresado ($codigo). Vuelve a intentarlo."
+            read tipo
+        done
+        echo "Ingrese el nombre de modelo:"
         read modelo
-    done
-    echo "Ingrese una breve descripción del producto:"
-    read descripcion
-    while [ "$descripcion" == "" ]; do
-        echo "[ERROR] La descripción no puede ser vacía. Vuelve a intentarlo."
-    done
-    echo "Ingrese la cantidad de stock inicial:"
-    read stock_inicial
-    while ! [[ "$stock_inicial" =~ ^[+]?[0-9]+$ ]]; do # esta regex filtra únicamente números positivos
-        echo "[ERROR] Valor de stock inválido. Vuelva a intentarlo."
+        while [ "$modelo" == "" ]; do
+            echo "[ERROR] El modelo no puede ser vacío. Vuelve a intentarlo."
+            read modelo
+        done
+        echo "Ingrese una breve descripción del producto:"
+        read descripcion
+        while [ "$descripcion" == "" ]; do
+            echo "[ERROR] La descripción no puede ser vacía. Vuelve a intentarlo."
+        done
+        echo "Ingrese la cantidad de stock inicial:"
         read stock_inicial
-    done
-    echo "Ingrese el precio por unidad del producto:"
-    read precio
-    while ! [[ "$precio" =~ ^[+]?[0-9]+$ ]]; do
-        echo "[ERROR] Valor de precio inválido (debe ser mayor a 0). Vuelva a intentarlo."
+        while ! [[ "$stock_inicial" =~ ^[+]?[0-9]+$ ]]; do # esta regex filtra únicamente números positivos
+            echo "[ERROR] Valor de stock inválido. Vuelva a intentarlo."
+            read stock_inicial
+        done
+        echo "Ingrese el precio por unidad del producto:"
         read precio
+        while ! [[ "$precio" =~ ^[+]?[0-9]+$ ]]; do
+            echo "[ERROR] Valor de precio inválido (debe ser mayor a 0). Vuelva a intentarlo."
+            read precio
+        done
+        echo "Producto ingresado exitosamente."
+        echo "${codigo} - ${tipo} - ${modelo} - ${descripcion} - ${stock_inicial} - $ ${precio}" >> productos.txt
+        echo "${codigo} - ${tipo} - ${modelo} - ${descripcion} - ${stock_inicial} - $ ${precio}"
+        echo "¿Desea ingresar otro producto (y/n)?"
+        read opc
+        opc=$(echo "${opc,,}" | tr -d ' ')
+        opc_valida=false
+        while [ "$opc_valida" = "false" ]; do
+            if [ "$opc" = "y" ]; then
+                opc_valida=true
+                elif [ "$opc" = "n" ]; then
+                opc_valida=true
+                ingreso=false
+            else
+                echo "[ERROR] Opción inválida."
+                read opc
+            fi
+        done
     done
-    
-    echo "Producto ingresado exitosamente."
-    echo "${codigo} - ${tipo} - ${modelo} - ${descripcion} - ${stock_inicial} - $ ${precio}" >> productos.txt
-    echo "${codigo} - ${tipo} - ${modelo} - ${descripcion} - ${stock_inicial} - $ ${precio}"
     echo "*** Regresando al menú... ***"
     sleep 1;
 }
@@ -176,6 +199,7 @@ inicializar()
     if ! [ -r usuarios.txt ]; then
         touch usuarios.txt
         echo "admin@admin" > usuarios.txt
+        user_actual="admin"
     fi
     if ! [ -r productos.txt ]; then
         touch productos.txt
@@ -188,7 +212,11 @@ menu()
 {
     while true; do
         clear
-        echo "Citadel"
+        if [ "$user_actual" = "" ]; then
+            echo "*** Usuario no autenticado. ***"
+        else 
+            echo "¡Bienvenido, ${user_actual}!"
+        fi
         echo "--------------------------------------------"
         echo "1 - Gestión de Usuarios"
         echo "2 - Ingresar Producto"
@@ -255,6 +283,7 @@ menu_usuario()
 
 vender_producto()
 {
+    clear
     > orden_temp.txt
     hay_productos=false
     venta=true
@@ -287,8 +316,8 @@ vender_producto()
         
         # Aquí tomamos línea y lo pipeamos a un awk. La opción -F es para indicar el 'field' o delimitador,
         # que en nuestro caso es ' - '. Para el quinto campo de la línea, imprimirlo y guardarlo en stock.
-        
         stock=$(echo "$linea" | awk -F' - ' '{print $5}' | tr -d ' ')
+        
         if [ $stock -eq 0 ]; then
             echo "[ERROR] No hay stock disponible de este producto."
         else
@@ -309,16 +338,36 @@ vender_producto()
             nueva_linea=$(echo $linea | sed "s|$stock|$nuevo_stock|")
             sed -i "${num}s|.*|${nueva_linea}|" productos.txt
             precio_total=$((cant_compra*precio_por_unidad))
-            echo "${tipo} - ${modelo} - ${cant_compra} - $ ${precio_total}" >> orden_temp.txt
+            if grep -qi "${tipo} - ${modelo}" orden_temp.txt; then
+                linea_orden=$(grep -i "${tipo} - ${modelo}" orden_temp.txt)
+                cant_compra_ant=$(echo "$linea_orden" | awk -F' - ' '{print $3}' | tr -d ' ')
+                cant_compra_nueva=$((cant_compra_ant+cant_compra))
+                precio_total_ant=$(echo "$linea_orden" | awk -F' - ' '{print $4}' | tr -d ' $')
+                precio_total_nuevo=$((precio_total_ant+precio_total))
+                nueva_linea_orden=$(echo "$linea_orden" | sed "s|${cant_compra_ant}|${cant_compra_nueva}|" | sed "s|${precio_total_ant}|${precio_total_nuevo}|")
+                sed -i "s|.*${tipo} - ${modelo}.*|${nueva_linea_orden}|" orden_temp.txt
+            else
+                echo "${tipo} - ${modelo} - ${cant_compra} - $ ${precio_total}" >> orden_temp.txt
+            fi
             echo "Venta realizada. Orden hasta el momento:"
             leer_venta
         fi
         i=1
         echo "¿Desea agregar otro producto (y/n)?"
-        read ans
-        if [ "$ans" = "n" ]; then
-            venta="false"
-        fi
+        read opc
+        opc=$(echo "${opc,,}" | tr -d ' ')
+        opc_valida=false
+        while [ "$opc_valida" = "false" ]; do
+            if [ "$opc" = "y" ]; then
+                opc_valida=true
+                elif [ "$opc" = "n" ]; then
+                opc_valida=true
+                venta=false
+            else
+                echo "[ERROR] Opción inválida."
+                read opc
+            fi
+        done
     done
     echo "*** Resumen de venta ***"
     leer_venta
@@ -334,11 +383,63 @@ leer_venta(){
 }
 
 filtro_productos(){
-    #TODO
+    filtro=true
+    while [ "$filtro" = "true" ]; do
+        clear
+        busqueda=false
+        echo "Ingrese tipo de producto a filtrar:"
+        read tipo_producto
+        tipo_producto=${tipo_producto,,}
+        filtro_valido=false
+        if [ "$tipo_producto" = "base" -o "$tipo_producto" = "layer" -o "$tipo_producto" = "shade" -o "$tipo_producto" = "dry" -o "$tipo_producto" = "contrast" -o "$tipo_producto" = "technical" -o "$tipo_producto" = "texture" -o "$tipo_producto" = "mediums" ]; then
+            filtro_valido=true
+        fi
+        if [ "$filtro_valido" = "false" ]; then
+            echo "[ERROR] Tipo no reconocido. Mostrando todos los productos:"
+            busqueda=true
+            leer_productos
+        else
+            busqueda=true
+            while IFS='-' read -r codigo tipo modelo desc stock precio; do
+                tipo=$(echo "$tipo" | tr -d ' ')
+                # echo "Comparando: tipo_producto='$tipo_producto' con tipo='$tipo'"
+                if [ "$tipo_producto" = "$tipo" ]; then
+                    echo "${codigo}- ${tipo} -${modelo}-${desc}-${stock}-${precio}"
+                fi
+            done < productos.txt
+        fi
+        if [ "$busqueda" = "false" ]; then
+            echo "[ERROR] La búsqueda no arrojó resultados."
+        fi
+        echo "¿Desea realizar otra búsqueda? (y/n)"
+        read opc
+        opc=$(echo "${opc,,}" | tr -d ' ')
+        opc_valida=false
+        while [ "$opc_valida" = "false" ]; do
+            if [ "$opc" = "y" ]; then
+                opc_valida=true
+                elif [ "$opc" = "n" ]; then
+                opc_valida=true
+                filtro=false
+            else
+                echo "[ERROR] Opción inválida."
+                read opc
+            fi
+        done
+    done
+    echo "*** Volviendo al menú... ***"
+    sleep 2;
 }
 
 reporte_pinturas(){
-    #TODO
+    clear
+    echo ""
+}
+
+leer_productos(){
+    while read line; do
+        echo $line
+    done < productos.txt
 }
 
 inicializar
