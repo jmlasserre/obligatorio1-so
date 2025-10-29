@@ -62,6 +62,7 @@ logout() {
             read opc
         fi
     done
+    echo "*** Cerrando sesión... ***"
     sleep 1;
 }
 
@@ -135,18 +136,27 @@ ingresar_producto() {
     echo "*** Ingreso de producto ***"
     ingreso=true
     while [ "$ingreso" = "true" ]; do
-        echo "Ingrese el código de producto:"
-        read codigo
-        while [ ${#codigo} -ne 3 -o "$codigo" != "${codigo^^}" ]; do
-            echo "[ERROR] Formato inválido de código. Vuelve a intentarlo."
-            read codigo
-        done
-        codigo="${codigo^^}"
         echo "Ingrese el tipo de producto a agregar:"
         read tipo
-        while [ "$codigo" != "BAS" -a "$codigo" != "LAY" -a "$codigo" != "SHA" -a "$codigo" != "DRY" -a "$codigo" != "CON" -a "$codigo" != "TEC" -a "$codigo" != "TEX" -a "$codigo" != "MED" ]; do
-            echo "[ERROR] El tipo ingresado no corresponde al código ingresado ($codigo). Vuelve a intentarlo."
-            read tipo
+        tipo=${tipo,,}
+        codigo=""
+        while true; do
+            case "$tipo" in
+                "base") codigo=BAS ;;
+                "layer") codigo=LAY ;;
+                "shade") codigo=SHA ;;
+                "dry") codigo=DRY ;;
+                "contrast") codigo=CON ;;
+                "technical") codigo=TEC ;;
+                "texture") codigo=TEX ;;
+                "mediums") codigo=MED ;;
+                *)
+                    echo "[ERROR] Tipo inválido. Ingrese un tipo válido."
+                    read tipo
+                    tipo=${tipo,,}
+                    continue
+                ;;
+            esac
         done
         echo "Ingrese el nombre de modelo:"
         read modelo
@@ -214,7 +224,7 @@ menu()
         clear
         if [ "$user_actual" = "" ]; then
             echo "*** Usuario no autenticado. ***"
-        else 
+        else
             echo "¡Bienvenido, ${user_actual}!"
         fi
         echo "--------------------------------------------"
@@ -229,10 +239,34 @@ menu()
         
         case $opcion in
             1) menu_usuario;;
-            2) ingresar_producto;;
-            3) vender_producto;;
-            4) filtro_productos;;
-            5) reporte_pinturas;;
+            2)
+                if [ "$user_actual" = "" ]; then
+                    echo "[ERROR] Debe estar autenticado para acceder a esta función."
+                else
+                    ingresar_producto
+                fi
+            sleep 1;;
+            3)
+                if [ "$user_actual" = "" ]; then
+                    echo "[ERROR] Debe estar autenticado para acceder a esta función."
+                else
+                    vender_producto
+                fi
+            sleep 1;;
+            4)
+                if [ "$user_actual" = "" ]; then
+                    echo "[ERROR] Debe estar autenticado para acceder a esta función."
+                else
+                    filtro_productos
+                fi
+            sleep 1;;
+            5)
+                if [ "$user_actual" = "" ]; then
+                    echo "[ERROR] Debe estar autenticado para acceder a esta función."
+                else
+                    reporte_pinturas
+                fi
+            sleep 1;;
             6)
                 echo "*** Cerrando sesión. ¡Hasta luego! ***";
             break;;
@@ -433,7 +467,17 @@ filtro_productos(){
 
 reporte_pinturas(){
     clear
-    echo ""
+    > datos.csv
+    while IFS='-' read -r codigo tipo modelo descripcion cantidad precio; do
+        codigo_csv=$(echo "$codigo" | tr -d ' ')
+        tipo_csv=$(echo "$tipo" | tr -d ' ')
+        modelo_csv=$(echo "$modelo" | awk '{$1=$1; print}')
+        descripcion_csv=$(echo "$descripcion" | awk '{$1=$1; print}')
+        cantidad_csv=$(echo "$cantidad" | tr -d ' ')
+        precio_csv=$(echo "$precio" | tr -d '$ ')
+        echo "${codigo_csv};${tipo_csv};${modelo_csv};${descripcion_csv};${cantidad_csv};${precio_csv}" >> datos.csv
+    done < productos.txt
+    echo "*** Reporte de pinturas generado exitosamente en 'datos.csv'. ***"
 }
 
 leer_productos(){
